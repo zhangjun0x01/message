@@ -1,4 +1,5 @@
 package com.glodon.pojo;
 
-public class Sink {
+public enum Sink {
+    KAFKA, ROCKETMQ;
 }

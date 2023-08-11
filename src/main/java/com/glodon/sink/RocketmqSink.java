@@ -2,7 +2,6 @@ package com.glodon.sink;
 
 import org.apache.flink.api.connector.sink2.StatefulSink;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
-import org.apache.flink.types.Row;
 
 import java.io.IOException;
 import java.util.Collection;
