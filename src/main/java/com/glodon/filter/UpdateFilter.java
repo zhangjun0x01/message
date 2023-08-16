@@ -1,28 +1,31 @@
 package com.glodon.filter;
 
 
+import com.glodon.pojo.Rule;
 import org.apache.flink.api.common.functions.RichFilterFunction;
 import org.apache.flink.api.common.state.MapState;
 import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
+import java.util.Arrays;
 import java.util.Objects;
 
-public class UpdateFilter extends RichFilterFunction<Row> {
+import static org.apache.flink.types.RowKind.DELETE;
+import static org.apache.flink.types.RowKind.INSERT;
+
+public class UpdateFilter extends RichFilterFunction<Tuple2<Row, Rule>> {
 
 
     private transient MapState<String, Row> mapState;
     private final String tableName;
-    private final String primaryKeys;
-
     private final String[] monitorFields;
 
 
-    public UpdateFilter(String tableName, String primaryKeys, String[] monitorFields) {
+    public UpdateFilter(String tableName, String[] monitorFields) {
         this.tableName = tableName;
-        this.primaryKeys = primaryKeys;
         this.monitorFields = monitorFields;
     }
 
@@ -33,21 +36,28 @@ public class UpdateFilter extends RichFilterFunction<Row> {
     }
 
     @Override
-    public boolean filter(Row row) throws Exception {
-        String key = tableName + "-" + primaryKeys;
+    public boolean filter(Tuple2<Row, Rule> tuple) throws Exception {
+        Row row = tuple.f0;
+        Rule rule = tuple.f1;
+        String tableMame = rule.getTableName();
+
+        if (row.getKind().equals(INSERT) || row.getKind().equals(DELETE)) {
+            return true;
+        }
+
         if (row.getKind().equals(RowKind.UPDATE_BEFORE)) {
-            mapState.put(key, row);
+            mapState.put(tableMame, row);
         }
 
         if (row.getKind().equals(RowKind.UPDATE_AFTER)) {
-            Row oldRow = mapState.get(key);
+            Row oldRow = mapState.get(tableMame);
             if (oldRow != null) {
-                mapState.remove(key);
-                for (String field : monitorFields) {
-                    return Objects.equals(oldRow.getField(field), row.getField(field));
-                }
+                mapState.remove(tableMame);
+                return Arrays.stream(monitorFields).anyMatch(field -> !Objects.equals(oldRow.getField(field), row.getField(field)));
             }
         }
+
         return false;
     }
+
 }

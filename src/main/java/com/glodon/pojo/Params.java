@@ -1,5 +1,7 @@
 package com.glodon.pojo;
 
+import java.util.Arrays;
+
 public class Params implements java.io.Serializable {
 
     private PaimonInfo paimonInfo;
@@ -21,5 +23,15 @@ public class Params implements java.io.Serializable {
 
     public Rule[] getRules() {
         return rules;
+    }
+
+    @Override
+    public String toString() {
+        return "Params{" +
+                "paimonInfo=" + paimonInfo +
+                ", kafkaInfo=" + kafkaInfo +
+                ", rocketmqInfo=" + rocketmqInfo +
+                ", rules=" + Arrays.toString(rules) +
+                '}';
     }
 }
